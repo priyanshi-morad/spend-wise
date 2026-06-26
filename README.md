@@ -1,4 +1,4 @@
-# 💸 SpendWise — Python Expense Tracker
+# 💸 SpendWise — Expense Tracker
 
 A full-featured expense tracking web application built with **Python + Flask + SQLite + Matplotlib**.
 
