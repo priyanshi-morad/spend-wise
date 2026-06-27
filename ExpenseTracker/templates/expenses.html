@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}All Expenses{% endblock %}
+
+{% block content %}
+<header class="header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+    <div>
+        <h1 class="page-title">Transaction History</h1>
+        <p class="page-sub">Manage and filter your past transactions.</p>
+    </div>
+    <div style="text-align: right;">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 4px;">Total in View</p>
+        <p style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">₹{{ total|round(2) }}</p>
+    </div>
+</header>
+
+<!-- FILTERS -->
+<div class="glass-card" style="padding: 24px;">
+    <form method="GET" class="search-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Date</label>
+            <input type="date" name="date" value="{{ filters.date }}" max="{{ today }}">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Category</label>
+            <select name="category">
+                <option value="All">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Keyword</label>
+            <input type="text" name="keyword" placeholder="Search..." value="{{ filters.keyword }}">
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">Filter</button>
+            <a href="{{ url_for('expenses') }}" class="btn btn-outline" style="flex: 1;">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- TRANSACTIONS TABLE -->
+<div class="glass-card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in expenses %}
+                <tr>
+                    <td>{{ e.date }}</td>
+                    <td>
+                        <span class="badge badge-{{ e.category.lower() }}">{{ e.category }}</span>
+                    </td>
+                    <td>{{ e.description or '-' }}</td>
+                    <td style="font-weight: 600;">₹{{ e.amount }}</td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <a href="{{ url_for('edit', eid=e.id) }}" class="btn btn-outline btn-sm" title="Edit">
+                                ✏️
+                            </a>
+                            <form action="{{ url_for('delete', eid=e.id) }}" method="POST" onsubmit="return confirm('Delete this expense?')">
+                                <button type="submit" class="btn btn-outline btn-sm" style="color: var(--accent);" title="Delete">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 60px; color: var(--text-muted);">
+                        No transactions found for these filters.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

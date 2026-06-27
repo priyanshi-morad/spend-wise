@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SpendWise{% endblock %} | Premium Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    {% if session.get('user_id') %}
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <span>💸</span> SpendWise
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-label">Menu</div>
+            <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="{{ url_for('add') }}" class="nav-link {% if request.endpoint == 'add' %}active{% endif %}">
+                <span class="nav-icon">➕</span> Add Expense
+            </a>
+            <a href="{{ url_for('expenses') }}" class="nav-link {% if request.endpoint == 'expenses' %}active{% endif %}">
+                <span class="nav-icon">📋</span> All Expenses
+            </a>
+            <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
+                <span class="nav-icon">📈</span> Reports
+            </a>
+            <a href="{{ url_for('budget') }}" class="nav-link {% if request.endpoint == 'budget' %}active{% endif %}">
+                <span class="nav-icon">🎯</span> Budget
+            </a>
+            <a href="{{ url_for('export_csv') }}" class="nav-link">
+                <span class="nav-icon">⬇️</span> Export CSV
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                Logged in as <span class="username">{{ session.username }}</span>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                <span>🚪</span> Sign out
+            </a>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- FLASH MESSAGES -->
+    <div class="flashes">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="alert alert-{{ 'error' if cat == 'error' else 'success' }}">
+                        {% if cat == 'error' %}⚠️{% else %}✅{% endif %}
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+    // Global Chart Config
+    Chart.defaults.color = '#948979';
+    Chart.defaults.font.family = "'Outfit', sans-serif";
+    
+    // Auto-dismiss alerts
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(el => {
+            el.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.transform = 'translateX(100px)';
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 500);
+        });
+    }, 4000);
+
+    // Custom Month-Year Picker Widget
+    document.addEventListener("DOMContentLoaded", function() {
+        initCustomMonthPickers();
+    });
+
+    function initCustomMonthPickers() {
+        const inputs = document.querySelectorAll('input[type="month"]');
+        inputs.forEach(input => {
+            // Create custom month picker wrapper
+            const container = document.createElement('div');
+            container.className = 'custom-month-picker-container';
+            
+            // Copy style attribute if any
+            if (input.getAttribute('style')) {
+                container.setAttribute('style', input.getAttribute('style'));
+            }
+            
+            const trigger = document.createElement('div');
+            trigger.className = 'custom-month-picker-trigger';
+            
+            const displayVal = document.createElement('span');
+            displayVal.className = 'custom-month-picker-display-val';
+            
+            const icon = document.createElement('span');
+            icon.className = 'custom-month-picker-calendar-icon';
+            icon.innerHTML = '📅';
+            
+            trigger.appendChild(displayVal);
+            trigger.appendChild(icon);
+            container.appendChild(trigger);
+            
+            // Create dropdown
+            const dropdown = document.createElement('div');
+            dropdown.className = 'custom-month-picker-dropdown';
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'custom-month-picker-header';
+            
+            const yearSelect = document.createElement('select');
+            yearSelect.className = 'custom-month-picker-year-select';
+            
+            header.appendChild(yearSelect);
+            dropdown.appendChild(header);
+            
+            // Months grid
+            const grid = document.createElement('div');
+            grid.className = 'custom-month-picker-months-grid';
+            
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthButtons = [];
+            
+            monthNames.forEach((name, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'custom-month-picker-month-btn';
+                btn.textContent = name;
+                btn.dataset.month = String(idx + 1).padStart(2, '0');
+                grid.appendChild(btn);
+                monthButtons.push(btn);
+            });
+            dropdown.appendChild(grid);
+            
+            // Footer
+            const footer = document.createElement('div');
+            footer.className = 'custom-month-picker-footer';
+            
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.className = 'custom-month-picker-footer-btn';
+            clearBtn.textContent = 'Clear';
+            
+            const todayBtn = document.createElement('button');
+            todayBtn.type = 'button';
+            todayBtn.className = 'custom-month-picker-footer-btn';
+            todayBtn.textContent = 'This month';
+            
+            footer.appendChild(clearBtn);
+            footer.appendChild(todayBtn);
+            dropdown.appendChild(footer);
+            
+            container.appendChild(dropdown);
+            
+            // Insert custom picker and hide original input
+            input.parentNode.insertBefore(container, input);
+            input.style.display = 'none';
+            container.appendChild(input); // keep the input inside container for easy access
+            
+            // Config variables
+            const now = new Date();
+            const curYearStr = String(now.getFullYear());
+            const curMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+            const curMonthVal = `${curYearStr}-${curMonthStr}`;
+            
+            const minVal = input.getAttribute('min') || '2020-01';
+            const maxVal = input.getAttribute('max') || curMonthVal;
+            
+            const [minYear, minMonth] = minVal.split('-').map(Number);
+            const [maxYear, maxMonth] = maxVal.split('-').map(Number);
+            
+            // Populate year selector
+            for (let y = maxYear; y >= minYear; y--) {
+                const opt = document.createElement('option');
+                opt.value = String(y);
+                opt.textContent = String(y);
+                yearSelect.appendChild(opt);
+            }
+            
+            // State
+            let selectedYear = maxYear;
+            let selectedMonth = '';
+            
+            function updateDisplay() {
+                const val = input.value;
+                if (val && val.includes('-')) {
+                    const [y, m] = val.split('-');
+                    selectedYear = Number(y);
+                    selectedMonth = m;
+                    
+                    yearSelect.value = String(selectedYear);
+                    
+                    const dateObj = new Date(selectedYear, Number(selectedMonth) - 1, 1);
+                    const displayMonthName = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    displayVal.textContent = displayMonthName;
+                } else {
+                    displayVal.textContent = 'Select month';
+                    selectedMonth = '';
+                }
+                
+                // Highlight selected month button
+                monthButtons.forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.month === selectedMonth && String(selectedYear) === yearSelect.value);
+                });
+                
+                updateMonthButtonsDisabledState();
+            }
+            
+            function updateMonthButtonsDisabledState() {
+                const activeYear = Number(yearSelect.value);
+                monthButtons.forEach(btn => {
+                    const mNum = Number(btn.dataset.month);
+                    let disabled = false;
+                    
+                    if (activeYear === maxYear && mNum > maxMonth) {
+                        disabled = true;
+                    }
+                    if (activeYear === minYear && mNum < minMonth) {
+                        disabled = true;
+                    }
+                    btn.disabled = disabled;
+                });
+            }
+            
+            // Event Listeners
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Close all other open custom month pickers first
+                document.querySelectorAll('.custom-month-picker-container').forEach(c => {
+                    if (c !== container) c.classList.remove('open');
+                });
+                container.classList.toggle('open');
+            });
+            
+            yearSelect.addEventListener('click', function(e) {
+                e.stopPropagation(); // prevent closing dropdown
+            });
+            
+            yearSelect.addEventListener('change', function(e) {
+                e.stopPropagation();
+                updateMonthButtonsDisabledState();
+                
+                // If the selected month becomes disabled on year change, unselect it
+                const activeYear = Number(yearSelect.value);
+                if (selectedMonth) {
+                    const mNum = Number(selectedMonth);
+                    if ((activeYear === maxYear && mNum > maxMonth) || (activeYear === minYear && mNum < minMonth)) {
+                        selectedMonth = '';
+                        monthButtons.forEach(btn => btn.classList.remove('selected'));
+                    }
+                }
+            });
+            
+            monthButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const m = btn.dataset.month;
+                    const y = yearSelect.value;
+                    input.value = `${y}-${m}`;
+                    updateDisplay();
+                    container.classList.remove('open');
+                    
+                    // Trigger change event
+                    input.dispatchEvent(new Event('change'));
+                });
+            });
+            
+            clearBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                input.value = '';
+                updateDisplay();
+                container.classList.remove('open');
+                input.dispatchEvent(new Event('change'));
+            });
+            
+            todayBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                input.value = curMonthVal;
+                updateDisplay();
+                container.classList.remove('open');
+                input.dispatchEvent(new Event('change'));
+            });
+            
+            // Click outside closes picker
+            document.addEventListener('click', function(e) {
+                if (!container.contains(e.target)) {
+                    container.classList.remove('open');
+                }
+            });
+            
+            // Initialize
+            updateDisplay();
+        });
+    }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
